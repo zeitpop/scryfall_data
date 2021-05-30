@@ -98,10 +98,9 @@ for i in oracle:
     print("\tChecking that values to insert match original values")
     for ii in range(0, len(columns)):
         # check if the ii'th element in columns keys to a value in i that matches the ii'th element in values
-        if i[columns[ii]] == values[ii]:
-            print("\t\t Column: ", columns[ii], "Iterator: ", ii, " Format: value == original value")
-            print("\t\t\t", values[ii], " == ", i[columns[ii]])
+        print("\t\t", columns[ii], "...")
 
+        assert i[columns[ii]] == values[ii], "Mismatched value"
 
     #if i[columns] == values:
     #    statement = constructINSERT(columns, values)
