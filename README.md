@@ -12,10 +12,12 @@ Goals:
     [ ] Flask.py for API endpoint
     [ ] Web App to use data
 
-[ ] mySQL database containing data available from scryfall
+[ ] Database
     
     --- Design Phase
     [ ] Analyze and understand scryfall data (types, fields, etc)
+        [x] List all fields and data types
+        [ ] Translate each field into SQL column data type
     [ ] Create an Entity Relationship Diagram to map functional dependencies, redundancies, etc
     [ ] Apply normalization to refine database model
     
