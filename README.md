@@ -19,6 +19,8 @@ Goals:
         [x] List all fields and data types
         [ ] Translate each field into SQL column data type
     [ ] Create an Entity Relationship Diagram to map functional dependencies, redundancies, etc
+        https://lucid.app/lucidchart/d717ddde-fd59-4ae4-a171-0693a39b155e
+        
     [ ] Apply normalization to refine database model
     
     --- Create Phase
