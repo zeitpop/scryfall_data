@@ -8,7 +8,7 @@ Version: 1.0
 --------------------------------------------------------------------
 */
 -- create schemas
-CREATE SCHEMA scryfall;
+-- CREATE SCHEMA scryfall;
 
 -- Select the schema
 USE scryfall;
@@ -22,9 +22,8 @@ CREATE TABLE cards (
 	oracle_id VARCHAR (255) NOT NULL,
 	scryfall_uri VARCHAR (255) NOT NULL,
 	uri VARCHAR (255) NOT NULL,
-	FOREIGN KEY (all_parts) REFERENCES related_card_objects (related_object_id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (card_faces) REFERENCES card_faces (card_face_id) ON DELETE CASCADE ON UPDATE CASCADE,
-	cmc DECIMAL NOT NULL,
+	card_face_id INT,
+	cmc DECIMAL (19,4) NOT NULL,
 	color_identity VARCHAR (255) NOT NULL,
 	color_indicator VARCHAR (255),
 	colors VARCHAR (255),
@@ -40,17 +39,17 @@ CREATE TABLE cards (
 	flavor_text VARCHAR (511), 
 	rarity VARCHAR (12),
 	release_at DATETIME,
-	reprint, BOOLEAN,
+	reprint BOOLEAN,
 	set_name VARCHAR (255),
 	set_type VARCHAR (255),
 	set_code VARCHAR (255)
-
+	
 );
 
 CREATE TABLE card_faces (
 	card_face_id INT PRIMARY KEY,
-	FOREIGN KEY parent_card_id REFERENCES cards (card_id),
-	color_indicator, VARCHAR (255),
+	parent_card_id INT,
+	color_indicator VARCHAR (255),
 	colors VARCHAR (255), 
 	flavor_text VARCHAR (255),
 	loyalty VARCHAR (255),
@@ -60,8 +59,8 @@ CREATE TABLE card_faces (
 	oracle_text VARCHAR(1023),
 	power VARCHAR (255),
 	toughness VARCHAR (255),
-	type_line VARCHAR (255) NOT NULL
-
+	type_line VARCHAR (255) NOT NULL,
+	FOREIGN KEY (parent_card_id) REFERENCES cards(card_id)
 );
 
 CREATE TABLE decklists (
@@ -69,10 +68,10 @@ CREATE TABLE decklists (
 	deck_format VARCHAR (255),
 	deck_author VARCHAR (255),
 	deck_source VARCHAR (255),
-	FOREIGN KEY card_scryfall_id REFERENCES cards (scryfall_card_id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+	card_id INT,
 	card_name VARCHAR(255),
 	count_maindeck INT,
-	count_sideboard INT
-
+	count_sideboard INT,
+	FOREIGN KEY (card_id) REFERENCES cards (card_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 
 );
