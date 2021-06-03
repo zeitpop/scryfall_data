@@ -9,6 +9,9 @@ Goals:
     [x] mySQL database configuration
     [x] Importing bulk data into Python for ETL
     [x] SQLAlchemy.py for connecting and interacting with database
+        [x] engine / connection basics, textual SQL interface
+        [ ] ORM -- reflecting, tables/columns
+        [ ] INSERTing
     [ ] Flask.py for API endpoint
     [ ] Web App to use data
 
@@ -25,7 +28,7 @@ Goals:
     
     --- Create Phase
     [x] Create .SQL scripts for making tables
-    [x] Write Python script for parsing bulk data and INSERTing into database
+    [ ] Write Python script for parsing bulk data and INSERTing into database
 
 [ ] Build data pipeline for automatically adding new data to database
 
