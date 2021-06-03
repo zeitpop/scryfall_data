@@ -1,106 +1,129 @@
 import json
-# import sqlalchemy
+from sqlalchemy import text
+from sqlalchemy import create_engine
+from func_lib import constructINSERT
+from func_lib import submitSQL
+# constructINSERT(tabe, columns, values
 
 
-def constructINSERT(c, v):
-    separator1 = ", "
-    separator2 = ", "
+#################################
+## Initialization 
+#################################
 
-    print("received input argument c as type ", type(c))
-    print("received input argument v as type ", type(v))
+## Initialize SQL connection
+engine = create_engine("mysql+mysqldb://root:508774Mw!@localhost/scryfall", echo=True, future=True)
 
-    columnStatement = separator1.join(c)
-    valueStatement = separator2.join(v)
-    
-    print("created columnStatement as type ", type(columnStatement))
-    print("created valueStatemenet as type ", type(valueStatement))
 
-    insertStatement = "INSERT INTO table (" + columnStatement + ") \n VALUES (" + valueStatement + "); "
-
-    return insertStatement
-
-# open file, load .json
-
-# for reference: https://realpython.com/python-json/#deserializing-json
-
-# json loads as
-# list
-# --dict (card)
-# -- -- key : value
-# -- -- key : value
-# -- -- dict
-# -- -- -- key : value
-# -- -- -- key : value
-# -- -- key : value
-
+## Load .json file of data 
 with open("../data/test_oracle.json") as d:
-    oracle = json.load(d)
+    data = json.load(d)
 
-print("loaded file as type: ", type(oracle))
+print("loaded file as type: ", type(data))
 
-# initialize columns
+
+
+#################################
+## Process imported data 
+#################################
+
+# initialize columns to pull in
+    # get all card-level columns
+    # translate local DB columns to match .json data
+        # uuid
+        # card_faces / etc
+    # handle sub-dicts of card-faces
+# columns_toMatch = sql.table.cards.getColumns + sql.table.cardFaces.getColumns
+#   make this a dict with:
+#       columns_toMatch
+#           key: value
+#           
+# for key in card_json
+#   cards_SQL = card_json(key)
+#   
+#   for face in card_jason('card_faces'):
+#      cardfaces_SQL = card_json('card_face')(face)
+#
+#
+#
+#
+# stmt = insert(user_table).values(name='spongebob', fullname="Spongebob Squarepants")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 columns = []
 
-# for each card 'i' in list 'oracle'
-for i in oracle:
+# for each dict 'card' in list 'data'
+for card in data:
     
-    # initialize list of per-card values 
-    values = []
-    print("Reading card ", i['name'])
-    # for each key 'f' of card dict 'i'    
-    for f in i:
+    values = [] # initialize list of per-card values
+    print("Reading card ", card['name'])
+    
+    for key in card: # f --> key
 
-        # key/value level 
-        # check types of key 'f' of card dict 'i' is itself a dict
-        if type(i[f]) is dict:
-            print("\t", f, " is a dict, skipping")
+        if type(card[key]) is dict:
+            print("\t", key, " is a dict, skipping")
             
             # if it is, cycle though keys/values of sub-dict 'h'
-            for h in i[f]:
-                print("\t\t" + h, i[f][h], ", skipping")
+            for h in card[key]:
+                print("\t\t" + h, card[key][h], ", skipping")
           
-        elif type(i[f]) is list:
-            print("\t", f, " is a list, skipping")
+        elif type(card[key]) is list:
+            print("\t", key, " is a list, skipping")
 
         # otherwise, do stuff to top level keys
         else:
-            print("\t", f, " is a ", type(f), ", reading...")
+            print("\t", key, " is a ", type(key), ", reading...")
             # append key to list of columns, if it isn't there already
-            if f not in columns: 
-                print("\t\t", f, " not in yet in list of columns, adding..")
-                columns.append(f)
+            if key not in columns: 
+                print("\t\t", key, " not in yet in list of columns, adding..")
+                columns.append(key)
            
-            if i[f] is not str:
+            if card[key] is not str:
                 
                 print("\t\t converting to str...")
-                i[f] = str(i[f])
+                card[key] = str(card[key])
 
             # Add key's value to list of values
-            values.append(i[f])
+            values.append(card[key])
             print("\t\tSuccessfully added to list of values")   
 
     # after tabuluating all keys and values, submit insert statement
-    print("Finished reading card ", i["name"])
+    print("Finished reading card ", card["name"])
    
     # print("Using column names:\n", columns)
     # print("Extracted card values:\n",values)
 
     # now we check to see if list of columns/values matches the corresponding json object we are parsing
 
-        # i is current card object as dict
-        # i["key"] returns key vaue
+        # 'card' is current card object as dict
+        # card["key"] returns key vaue
         # values[0] returns the first value
-        # columns[0] returns the first column name, which is a key of i
+        # columns[0] returns the first column name, which is a key of'card'
 
         # so, we want to check to make sure the corresponding value of column[n] is both i[columns[n]] and values[n]
             # i[columns[n]] == values[n]
     
     print("\tChecking that values to insert match original values")
     for ii in range(0, len(columns)):
-        # check if the ii'th element in columns keys to a value in i that matches the ii'th element in values
+        # check if the ii'th element in columns keys to a value in 'card' that matches the ii'th element in values
         print("\t\t", columns[ii], "...")
 
-        assert i[columns[ii]] == values[ii], "Mismatched value"
+        assert card[columns[ii]] == values[ii], "Mismatched value"
 
     #if i[columns] == values:
     #    statement = constructINSERT(columns, values)
