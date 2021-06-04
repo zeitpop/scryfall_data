@@ -1,135 +1,88 @@
 import json
-from sqlalchemy import text
-from sqlalchemy import create_engine
-from func_lib import constructINSERT
-from func_lib import submitSQL
-# constructINSERT(tabe, columns, values
+from sqlalchemy import *
+from sqlalchemy import table, create_engine
 
 
-#################################
-## Initialization 
-#################################
+####################
+## Initialize 
+####################
 
-## Initialize SQL connection
-engine = create_engine("mysql+mysqldb://root:508774Mw!@localhost/scryfall", echo=True, future=True)
+debug = 0
 
-
-## Load .json file of data 
+## Load .json file of data
 with open("../data/test_oracle.json") as d:
     data = json.load(d)
 
-print("loaded file as type: ", type(data))
+## Create handle to database
+engine = create_engine("mysql+mysqldb://root:508774Mw!@localhost/scryfall", echo=True, future=True)
+
+
+# https://docs.sqlalchemy.org/en/14/core/reflection.html#
+
+# Create MetaData object
+meta = MetaData()
+
+# Construct Table objects
+cards = Table('cards', meta, autoload_with=engine)
+card_faces = Table('card_faces', meta, autoload_with=engine)
 
 
 
-#################################
-## Process imported data 
-#################################
+#####################
+## ETL Data
+#####################
 
-# initialize columns to pull in
-    # get all card-level columns
-    # translate local DB columns to match .json data
-        # uuid
-        # card_faces / etc
-    # handle sub-dicts of card-faces
-# columns_toMatch = sql.table.cards.getColumns + sql.table.cardFaces.getColumns
-#   make this a dict with:
-#       columns_toMatch
-#           key: value
-#           
-# for key in card_json
-#   cards_SQL = card_json(key)
-#   
-#   for face in card_jason('card_faces'):
-#      cardfaces_SQL = card_json('card_face')(face)
-#
-#
-#
-#
-# stmt = insert(user_table).values(name='spongebob', fullname="Spongebob Squarepants")
+# Create list of columns, ideally we replace this by pulling column names from table objects metadata    
+columns = ["internal_card_id", "scryfall_card_id", "arena_id", "lang", "object", "oracle_id", "scryfall_uri", "uri", "card_face_id", "cmc", "color_identity", "color_indicator", "colors", "layout", "loyalty", "mana_cost", "name", "oracle_text", "power", "produced_mana", "toughness", "type_line", "flavor_text", "rarity", "release_at", "reprint", "set_name", "set_type", "set_code"]
 
+if debug == 1: 
+    print("Initializing processed_card...")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-columns = []
-
-# for each dict 'card' in list 'data'
-for card in data:
     
-    values = [] # initialize list of per-card values
-    print("Reading card ", card['name'])
+if debug == 1:
+   print("Importing raw card from loaded .json data...")
+
+raw_card = data[1]
+
+for raw_card in data:
     
-    for key in card: # f --> key
+    processed_card = dict.fromkeys(columns)
 
-        if type(card[key]) is dict:
-            print("\t", key, " is a dict, skipping")
-            
-            # if it is, cycle though keys/values of sub-dict 'h'
-            for h in card[key]:
-                print("\t\t" + h, card[key][h], ", skipping")
-          
-        elif type(card[key]) is list:
-            print("\t", key, " is a list, skipping")
-
-        # otherwise, do stuff to top level keys
-        else:
-            print("\t", key, " is a ", type(key), ", reading...")
-            # append key to list of columns, if it isn't there already
-            if key not in columns: 
-                print("\t\t", key, " not in yet in list of columns, adding..")
-                columns.append(key)
-           
-            if card[key] is not str:
-                
-                print("\t\t converting to str...")
-                card[key] = str(card[key])
-
-            # Add key's value to list of values
-            values.append(card[key])
-            print("\t\tSuccessfully added to list of values")   
-
-    # after tabuluating all keys and values, submit insert statement
-    print("Finished reading card ", card["name"])
-   
-    # print("Using column names:\n", columns)
-    # print("Extracted card values:\n",values)
-
-    # now we check to see if list of columns/values matches the corresponding json object we are parsing
-
-        # 'card' is current card object as dict
-        # card["key"] returns key vaue
-        # values[0] returns the first value
-        # columns[0] returns the first column name, which is a key of'card'
-
-        # so, we want to check to make sure the corresponding value of column[n] is both i[columns[n]] and values[n]
-            # i[columns[n]] == values[n]
+    for key in processed_card:
     
-    print("\tChecking that values to insert match original values")
-    for ii in range(0, len(columns)):
-        # check if the ii'th element in columns keys to a value in 'card' that matches the ii'th element in values
-        print("\t\t", columns[ii], "...")
+        if debug == 1:
+            print("\tSetting key: ", key)
+    
+        if key in raw_card:
+            processed_card[key] = raw_card[key]
+        elif key == 'scryfall_card_id':
+            processed_card[key] = raw_card['id']
+        elif key == 'set_code':
+            processed_card[key] = raw_card['set']
+        elif key == 'card_face':
+            # don't set? leave blank? don't have auto-increment setup
+            processed_card[key] = 'NULL'
 
-        assert card[columns[ii]] == values[ii], "Mismatched value"
+    if debug == 1:
+        print("Processed Card:", processed_card['name'])
 
-    #if i[columns] == values:
-    #    statement = constructINSERT(columns, values)
-    #    print('Submitting to database: \n', statement, '\n')
-    #else:
-    #    print("key/value mismatch after tabulation, exiting")
+        #for key in processed_card:
+            #print("\tKey: ", key)
+            #print("\t\tType: ", type(processed_card[key]))
+            #print("\t\tValue: ", processed_card[key])
 
-#print("The result of tabulating columns was: \r", columns, "\r")   
+
+
+############################
+## Submit to Database
+############################
+
+# Construct Statement
+statement = insert(cards).values(processed_card)
+
+# Execute and Commit Statement
+with engine.connect() as conn:
+    result = conn.execute(statement)
+    conn.commit()
+
 

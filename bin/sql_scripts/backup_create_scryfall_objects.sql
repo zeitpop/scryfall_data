@@ -15,7 +15,8 @@ USE scryfall;
 
 -- create tables
 CREATE TABLE cards (
-	card_id INT PRIMARY KEY,
+	internal_card_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	scryfall_card_id VARCHAR (255),
 	arena_id INT,
 	lang VARCHAR (255) NOT NULL,
 	object VARCHAR (255) NOT NULL,
@@ -60,7 +61,7 @@ CREATE TABLE card_faces (
 	power VARCHAR (255),
 	toughness VARCHAR (255),
 	type_line VARCHAR (255) NOT NULL,
-	FOREIGN KEY (parent_card_id) REFERENCES cards(card_id)
+	FOREIGN KEY (parent_card_id) REFERENCES cards(internal_card_id)
 );
 
 CREATE TABLE decklists (
@@ -68,10 +69,10 @@ CREATE TABLE decklists (
 	deck_format VARCHAR (255),
 	deck_author VARCHAR (255),
 	deck_source VARCHAR (255),
-	card_id INT,
-	card_name VARCHAR(255),
+	card_id INT NOT NULL,
+	card_name VARCHAR(255) NOT NULL,
 	count_maindeck INT,
 	count_sideboard INT,
-	FOREIGN KEY (card_id) REFERENCES cards (card_id) ON DELETE NO ACTION ON UPDATE NO ACTION
+	FOREIGN KEY (card_id) REFERENCES cards (internal_card_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 
 );
