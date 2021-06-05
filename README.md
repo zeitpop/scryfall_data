@@ -30,10 +30,15 @@ Goals:
     
     --- Create Phase
     [x] Create .SQL scripts for making tables
-    [x] Write Python script for parsing bulk data and INSERTing into database
-    [x] Run bulk insert, database in provisionally usable state
+    [x] Write Python script for parsing bulk card data and INSERTing into database
+    [x] Run bulk card insert, database in provisionally usable state
 
-[ ] Build data pipeline for automatically adding new data to database
+[ ] Decklist Data Pipeline
+    [ ] identify scrapable source for lists
+    [ ] build scraper
+    [ ] build ETL to insert scraped decks into database
+
+[ ] Card Data Pipeline
     [ ] Adapt insert_data.py to check for new cards and insert
         [ ] Check for new cards from scryfall
         [ ] Validate new data
