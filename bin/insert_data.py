@@ -1,6 +1,5 @@
 import json
 from sqlalchemy import *
-from sqlalchemy import table, create_engine
 import sys
 import requests
 
@@ -11,11 +10,11 @@ import requests
 debug = 1 
 
 ## Load .json file of data
-with open("../data/bulk_data.json") as d:
+with open("../data/unique_artwork.json") as d:
     data = json.load(d)
 
 ## Create handle to database
-engine = create_engine("mysql+mysqldb://root:508774Mw!@localhost/scryfall", echo=False, future=True)
+engine = create_engine("mysql+mysqldb://remote_compute:508774Mw!@ec2-3-22-74-97.us-east-2.compute.amazonaws.com/scryfall", echo=False, future=True, pool_pre_ping=True)
 
 
 # https://docs.sqlalchemy.org/en/14/core/reflection.html#
