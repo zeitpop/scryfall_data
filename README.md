@@ -6,6 +6,7 @@ Goals:
 
 [ ] Proof Tech Stack
 
+    -- Data pipeline 
     [x] mySQL database configuration
     [x] Importing bulk data into Python for ETL
     [x] SQLAlchemy.py for connecting and interacting with database
@@ -13,6 +14,8 @@ Goals:
         [ ] ORM -- reflecting, tables/columns
         [ ] INSERTing
     [ ] Flask.py for API endpoint
+    
+    -- Doing things with the data
     [ ] Web App to use data
 
 [ ] Database
@@ -23,18 +26,18 @@ Goals:
         [x] Translate each field into SQL column data type
     [x] Create an Entity Relationship Diagram to map functional dependencies, redundancies, etc
         https://lucid.app/lucidchart/d717ddde-fd59-4ae4-a171-0693a39b155e
-        
     [-] Apply normalization to refine database model
     
     --- Create Phase
     [x] Create .SQL scripts for making tables
-    [ ] Write Python script for parsing bulk data and INSERTing into database
+    [x] Write Python script for parsing bulk data and INSERTing into database
+    [x] Run bulk insert, database in provisionally usable state
 
 [ ] Build data pipeline for automatically adding new data to database
-
-    [ ] Check periodically for new cards from scryfall
-    [ ] Validate new data
-    [ ] INSERT into database
+    [ ] Adapt insert_data.py to check for new cards and insert
+        [ ] Check for new cards from scryfall
+        [ ] Validate new data
+        [ ] INSERT into database
     
 [ ] API Endpoint
 
