@@ -14,6 +14,7 @@ sideboard = {}
 print_maindeck = False
 print_sideboard = False
 print_skipped_column_headers = False
+print_metadata = False
 
 
 # Open File and read
@@ -97,12 +98,34 @@ deck_metadata['Event'] = metadata_results[0].get_text()
 deck_metadata['Author'] = place_title_author[1]
 deck_metadata['Placement'] = place_title[0]
 deck_metadata['Deck Title'] = place_title[1]
+deck_metadata['Format'] = parsed_html.find('div', class_='meta_arch').get_text()
 
-for key in deck_metadata: print(key, ": ", deck_metadata[key])
+# deck_metadata['Date'] = 
+
+date_results = parsed_html.find('div', class_='meta_arch')
+
+print(type(date_results))
+print(date_results)
+
+
+# Possibly due to weirdly formatted html, the siblings of date_results 
+#   are both type Tag and Navigable String, which is not really usable.
+#   Trying to find a good way to iterate through results and skip NavigableStrings
+
+
+for i in date_results.next_siblings:
+    if isinstance(i, NavigableString):
+        continue
+    if isinstance(i, Tag):
+        print(type(i))
+#
+#for dd in date_results:
+#    print("--------------------------------------")
+#    print(dd.prettify())
+
+
+if print_metadata == True: 
+    for key in deck_metadata: print(key, ": ", deck_metadata[key])
 
 # Also Extract Event Date?????????? or leave to seperate event-level parsing
-
-#for divs in metadata_results:
-#    print(divs.get_text())
-
 
