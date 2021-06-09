@@ -88,7 +88,21 @@ if print_sideboard == True:
 
 metadata_results = parsed_html.find_all('div', class_='event_title')
 
-for divs in metadata_results:
-    print(divs)
+
+# Extract Deck Author, Title, and Placement in Event
+place_title_author = metadata_results[1].get_text().split(' - ', 1)
+place_title = place_title_author[0].split(" ", 1)
+
+deck_metadata['Event'] = metadata_results[0].get_text()
+deck_metadata['Author'] = place_title_author[1]
+deck_metadata['Placement'] = place_title[0]
+deck_metadata['Deck Title'] = place_title[1]
+
+for key in deck_metadata: print(key, ": ", deck_metadata[key])
+
+# Also Extract Event Date?????????? or leave to seperate event-level parsing
+
+#for divs in metadata_results:
+#    print(divs.get_text())
 
 
