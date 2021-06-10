@@ -4,22 +4,29 @@ Personal project for improving skills with Python, SQL and other data tools usin
 
 So far, I have an EC2-hosted MySQL data base
 
-- bin/--------------------
-   |- fetch_data.py ------------
-   |- insert.py ---------------- Primary script for ETL of Scryfall data .json into local MySQL database
-   |- requirements.txt---------- Package requirements bounced from Pip Virtual Environment
-   |- test.py ------------------ Scratchpad for development
-- data/-------------------- Directory for cached data during development
-   | - oracle_keys.txt --------- List of data field from Scryfall API data
-   | - test_default.txt -------- Sample .txt of Scryfall data
-   | - test_oracle.json -------- Sample .json of Scryfall data
-- db_api ------------------
-   | - api_endpoint.py --------- Initialized API, WIP
-   | - start_flask.sh ---------- Script for starting Flask web server for API
-- scraper/ -----------------
-   | - cache_page.py ----------- Takes a URL and caches .html file locally to be parsed without additional traffic
-   | - scrape.py --------------- Primary script for scraping an .html page for decklist and metadata
-   | - test_page.html ---------- Cached web page
+Data pipeline from Scryfall API to Database
+Database
+
+
+
+Files:
+
+bin/ ------------------- Directory for <br/>
+| - fetch_data.py ------------ Script for retrieving data from Scryfall API <br/>
+| - insert.py ---------------- Primary script for ETL of .json from Scryfall to local MySQL database </br>
+| - requirements.txt---------- Package requirements bounced from Pip Virtual Environment </br>
+| - test.py ------------------ Scratchpad for development </br>
+data/-------------------- Directory for cached data during development </br>
+   | - oracle_keys.txt --------- List of data field from Scryfall API data </br>
+   | - test_default.txt -------- Sample .txt of Scryfall data </br>
+   | - test_oracle.json -------- Sample .json of Scryfall data </br>
+db_api ------------------ </br>
+   | - api_endpoint.py --------- Initialized API, WIP </br>
+   | - start_flask.sh ---------- Script for starting Flask web server for API </br>
+scraper/ ----------------- </br>
+   | - cache_page.py ----------- Takes a URL and caches .html file locally to be parsed without additional traffic </br>
+   | - scrape.py --------------- Primary script for scraping an .html page for decklist and metadata </br>
+   | - test_page.html ---------- Cached web page </br>
    
 
 
