@@ -1,8 +1,28 @@
 # scryfall_data
 
-Project for learning data engineering skills using data from scryfall
+Personal project for improving skills with Python, SQL and other data tools using data from Scryfall API. 
 
-Goals:
+So far, I have an EC2-hosted MySQL data base
+
+- bin/--------------------
+   |- fetch_data.py ------------
+   |- insert.py ---------------- Primary script for ETL of Scryfall data .json into local MySQL database
+   |- requirements.txt---------- Package requirements bounced from Pip Virtual Environment
+   |- test.py ------------------ Scratchpad for development
+- data/-------------------- Directory for cached data during development
+   | - oracle_keys.txt --------- List of data field from Scryfall API data
+   | - test_default.txt -------- Sample .txt of Scryfall data
+   | - test_oracle.json -------- Sample .json of Scryfall data
+- db_api ------------------
+   | - api_endpoint.py --------- Initialized API, WIP
+   | - start_flask.sh ---------- Script for starting Flask web server for API
+- scraper/ -----------------
+   | - cache_page.py ----------- Takes a URL and caches .html file locally to be parsed without additional traffic
+   | - scrape.py --------------- Primary script for scraping an .html page for decklist and metadata
+   | - test_page.html ---------- Cached web page
+   
+
+
 
 [ ] Proof Tech Stack
 
