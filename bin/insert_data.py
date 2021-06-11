@@ -1,23 +1,29 @@
-import json
+import json, sys, os, requests
 from sqlalchemy import *
-import sys
-import requests
+from dotenv import load_dotenv
 
 ####################
 ## Initialize 
 ####################
 
 debug = 1 
+commit = False
 
 ## Load .json file of data
-with open("../data/unique_artwork.json") as d:
+with open("../data/test_oracle.json") as d:
     data = json.load(d)
 
-## Create handle to database
-engine = create_engine("mysql+mysqldb://remote_compute:508774Mw!@ec2-3-22-74-97.us-east-2.compute.amazonaws.com/scryfall", echo=False, future=True, pool_pre_ping=True)
+## Create database engine object
 
+load_dotenv()
 
-# https://docs.sqlalchemy.org/en/14/core/reflection.html#
+database_url = os.environ.get('DATABASE_URL')
+database_username = os.environ.get('DATABASE_USERNAME')
+database_password = os.environ.get('DATABASE_PASSWORD')
+
+connection_string = ("mysql+mysqldb://" + database_username + ":" + database_password + "@" + database_url + "/scryfall")
+
+engine = create_engine(connection_string, echo=False, future=True, pool_pre_ping=True)
 
 # Create MetaData object
 meta = MetaData()
@@ -63,6 +69,6 @@ for raw_card in data:
         
     with engine.connect() as connection:
         result = connection.execute(statement)
-        connection.commit()
+        if commit == True: connection.commit()
 
 
