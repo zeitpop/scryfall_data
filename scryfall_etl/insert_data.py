@@ -38,6 +38,11 @@ card_faces = Table('card_faces', meta, autoload_with=engine)
 #####################
 
 # Create list of columns, ideally we replace this by pulling column names from table objects metadata    
+
+#   # Here's how we would do it, will still have to account for mismatched names
+#   test_columns = [column.name for column in cards.columns]
+
+
 columns = ["internal_card_id", "scryfall_card_id", "arena_id", "lang", "object", "oracle_id", "scryfall_uri", "uri", "card_face_id", "cmc", "color_identity", "color_indicator", "colors", "layout", "loyalty", "mana_cost", "name", "oracle_text", "power", "produced_mana", "toughness", "type_line", "flavor_text", "rarity", "release_at", "reprint", "set_name", "set_type", "set_code"]
 
 

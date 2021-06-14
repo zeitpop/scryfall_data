@@ -1,9 +1,9 @@
-import json, requests, bs4, re
-
-
+import json, requests, bs4, re, os
+from dotenv import load_dotenv
+from sqlalchemy import * 
 
 ####################
-## Initialization
+# Initialization
 
 
 deck_metadata = {}
@@ -11,10 +11,10 @@ main_deck = {}
 sideboard = {}
 
 # Debug
-print_maindeck = True
-print_sideboard = True
+print_maindeck = False
+print_sideboard = False
 print_skipped_column_headers = False
-print_metadata = True
+print_metadata = False
 
 
 # Open File and read
@@ -42,10 +42,10 @@ parsed_html = bs4.BeautifulSoup(html_file, 'html.parser')
 
 
 #############################################################
-## Parse HTML bs4 object for decklist, sideboard, metadata
+# Parse HTML bs4 object for decklist, sideboard, metadata
 
 
-## Parse HTML for Main Deck cards and store in main_deck dict
+### Parse HTML for Main Deck cards and store in main_deck dict
 
 # Find Column Header divs for main deck.
 for category in parsed_html.find_all('div', class_='O14', string=[re.compile('LANDS'), re.compile('CREATURES')]):
@@ -68,7 +68,7 @@ if print_maindeck == True:
 
 
 
-## Parse for Sideboard and populate sideboard dict
+### Parse for Sideboard and populate sideboard dict
 
 # Finds Sideboard div
 sideboard_results = parsed_html.find('div', class_='O14', string='SIDEBOARD').find_next_siblings()
@@ -85,7 +85,7 @@ if print_sideboard == True:
     for key in sideboard: print("\t", sideboard[key], " ", key)
 
 
-## Parse for metadata and populate deck_metadata dict
+### Parse for metadata and populate deck_metadata dict
 
 metadata_results = parsed_html.find_all('div', class_='event_title')
 
@@ -94,24 +94,16 @@ metadata_results = parsed_html.find_all('div', class_='event_title')
 place_title_author = metadata_results[1].get_text().split(' - ', 1)
 place_title = place_title_author[0].split(" ", 1)
 
+# Insert into metadata dict
 deck_metadata['Event'] = metadata_results[0].get_text()
 deck_metadata['Author'] = place_title_author[1]
 deck_metadata['Placement'] = place_title[0]
 deck_metadata['Deck Title'] = place_title[1]
 deck_metadata['Format'] = parsed_html.find('div', class_='meta_arch').get_text()
 
-# deck_metadata['Date'] = 
 
+# Extract other metadata (Event Date, Event Link)
 date_results = parsed_html.find('div', class_='meta_arch')
-
-#print("Results Type: ", type(date_results))
-#print("Results: \n", date_results)
-#print("\n------------------------------")
-
-
-# Possibly due to weirdly formatted html, the siblings of date_results 
-#   are both type Tag and Navigable String, which is not really usable.
-#   Trying to find a good way to iterate through results and skip NavigableStrings
 
 date_text_results=[]
 
@@ -121,15 +113,57 @@ for i in date_results.next_siblings:
     if isinstance(i, bs4.element.Tag):
         date_text_results.append(i.get_text())
 
-#print(date_text_results[0])
-
 
 deck_metadata['event_link'] = date_text_results[1]
-
 deck_metadata['event_date'] = date_text_results[0].split(' - ', 1)[1]
 
 if print_metadata == True: 
     print("Metadata:")
     for key in deck_metadata: 
         print("\t", key, ": ", deck_metadata[key])
+
+
+####################################################################
+# Load Extracted Data into Database
+
+### Init Database
+
+
+# Import database credentials
+load_dotenv()
+database_url = os.environ.get('DATABASE_URL')
+database_username = os.environ.get('DATABASE_USERNAME')
+database_password = os.environ.get('DATABASE_PASSWORD')
+
+# Create connection string and engine object
+connection_string = ("mysql+mysqldb://" + database_username + ":" + database_password + "@" + database_url + "/scryfall")
+
+engine = create_engine(connection_string, echo=False, future=True, pool_pre_ping=True)
+
+# Create MetaData object
+meta = MetaData()
+
+# Construct Table objects
+events = Table('events', meta, autoload_with=engine)
+decks = Table('decks', meta, autoload_with=engine)
+decklists = Table('decklists', meta, autoload_with=engine)
+
+### Event Data
+
+# 
+for c in events.columns:
+    print(c.name)
+
+# Check if event is already in database and either
+    # Get event ID
+    # Load Event data into database
+
+### Deck Data
+
+# Check if deck is already in database
+# Load deck into database
+
+### Decklist Data
+
+# Load decklist into database
 
