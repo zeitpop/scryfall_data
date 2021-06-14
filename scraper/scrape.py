@@ -11,10 +11,10 @@ main_deck = {}
 sideboard = {}
 
 # Debug
-print_maindeck = False
-print_sideboard = False
+print_maindeck = True
+print_sideboard = True
 print_skipped_column_headers = False
-print_metadata = False
+print_metadata = True
 
 
 # Open File and read
@@ -128,8 +128,8 @@ deck_metadata['event_link'] = date_text_results[1]
 
 deck_metadata['event_date'] = date_text_results[0].split(' - ', 1)[1]
 
-print(deck_metadata['event_date'])
-
 if print_metadata == True: 
-    for key in deck_metadata: print(key, ": ", deck_metadata[key])
+    print("Metadata:")
+    for key in deck_metadata: 
+        print("\t", key, ": ", deck_metadata[key])
 
