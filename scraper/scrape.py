@@ -1,4 +1,4 @@
-import json, requests, bs4, re, os
+import json, requests, bs4, re, os, sys
 from dotenv import load_dotenv
 from sqlalchemy import * 
 
@@ -13,8 +13,8 @@ sideboard = {}
 print_maindeck = False
 print_sideboard = False
 print_skipped_column_headers = False
-print_event_data = True
-print_deck_data = True
+print_event_data = False
+print_deck_data = False
 
 # To be deprecated?
 print_metadata = False
@@ -155,18 +155,50 @@ if print_event_data == True:
     print("Event data: ")
     for key in event_data: print("\t", key, ": ", event_data[key])
 
-# Check if event is in database:
-# if checkedEventInDatabase == False:
-    # event_query_results = select * FROM scryfall.events WHERE event_date == ... AND event_name == ...
-    # if event_query_results == None:
-        # checkedEventInDatabase == True
-        # eventInDatabase == False
-    # elseif event_query_results =! None:
-        # checkedEventInDatabase == True
-        # eventInDatabase ==True
+# Query database for existing event record
 
-# if eventInDatabase == False:
-    # event_statement = insert(events).values(event_data)
+event_query_statement = select(events.c.id).where(events.c.event_name == event_data['event_name'])
+
+with engine.connect() as connection:
+        event_query_results = connection.execute(event_query_statement)
+        connection.commit() 
+
+event_results = event_query_results.all()
+eventExists = len(event_results) != 0
+
+actually_commit = False    
+
+if not eventExists:
+    print("Event not yet recorded")
+    event_insert_statement = insert(events).values(event_data)
+    with engine.connect() as connection:
+        event_insert_results = connection.execute(event_insert_statement)
+
+        # Can we put the post-insert query for event_id here?
+        event_query_results = connection.execute(event_query_statement)
+        if actually_commit == True: connection.commit()
+
+    
+
+    # or does it have to go in after we insert event data, we have to get event_id to pass to deckdata
+#    with engine.connect() as connection:
+#        event_query_results = connection.execute(event_query_statement)
+#        connection.commit()
+
+
+    # Either way we then have to set event_id:
+    event_results = event_query_results.all()
+    deck_data['event_id'] = [row[0] for row in event_results][0]
+
+elif eventExists:
+    print("Event already recorded")
+    deck_data['event_id'] = [row[0] for row in event_results][0]
+
+else:
+    print("Found ", len(event_results), " matching events")
+
+print("Retrieved event_id ", deck_data['event_id'])
+
 # elseif eventInDatabase:
     # deck_data['event_id'] = event_query_results['event_id']
 
@@ -177,6 +209,7 @@ if print_event_data == True:
 if print_deck_data == True:
     print("Deck Data: ")
     for key in deck_data: print("\t", key, ": ", deck_data[key])
+
 # if deck is not in database:
 #    deck_statement = insert(decks).values(deck_data)
 # else:
@@ -187,8 +220,12 @@ if print_deck_data == True:
 
 # Load decklist into database
 
-# For item in decklist, item =cardname, item(key) = count_maindeck
-# For item in sideboard, item = cardname, item(key) = count_sideboard
-# not this --> decklist_statement = insert(deckilsts).values(decklists_data)
+    # Can insert multiple rows in a single statement by creating a list of dicts: 
+        #https://docs.sqlalchemy.org/en/14/core/tutorial.html#executing-multiple-statements
+    # Might have to reorganize how we construct card objects
+
+    # For item in decklist, item =cardname, item(key) = count_maindeck
+    # For item in sideboard, item = cardname, item(key) = count_sideboard
+    # not this --> decklist_statement = insert(deckilsts).values(decklists_data)
 
 
