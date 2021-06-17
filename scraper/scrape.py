@@ -166,29 +166,27 @@ with engine.connect() as connection:
 event_results = event_query_results.all()
 eventExists = len(event_results) != 0
 
-actually_commit = False    
+actually_commit = True    
 
 if not eventExists:
     print("Event not yet recorded")
     event_insert_statement = insert(events).values(event_data)
     with engine.connect() as connection:
         event_insert_results = connection.execute(event_insert_statement)
-
-        # Can we put the post-insert query for event_id here?
-        event_query_results = connection.execute(event_query_statement)
         if actually_commit == True: connection.commit()
 
-    
+    print("Recorded event data")
 
     # or does it have to go in after we insert event data, we have to get event_id to pass to deckdata
-#    with engine.connect() as connection:
-#        event_query_results = connection.execute(event_query_statement)
-#        connection.commit()
+    with engine.connect() as connection:
+        event_query_results = connection.execute(event_query_statement)
+        connection.commit()
 
 
     # Either way we then have to set event_id:
     event_results = event_query_results.all()
     deck_data['event_id'] = [row[0] for row in event_results][0]
+
 
 elif eventExists:
     print("Event already recorded")
@@ -211,7 +209,7 @@ if print_deck_data == True:
     for key in deck_data: print("\t", key, ": ", deck_data[key])
 
 # if deck is not in database:
-#    deck_statement = insert(decks).values(deck_data)
+deck_statement = insert(decks).values(deck_data)
 # else:
 #   get deck_id
 
