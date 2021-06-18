@@ -2,25 +2,15 @@ import json, requests, bs4, re, os, sys
 from dotenv import load_dotenv
 from sqlalchemy import * 
 
-####################
-# Initialization
-
-deck_metadata = {}
-main_deck = {}
-sideboard = {}
+#########################################
+### Initialization
 
 # Debug
 print_maindeck = False
 print_sideboard = False
 print_skipped_column_headers = False
 print_event_data = False
-print_deck_data = False
-
-# To be deprecated?
-print_metadata = False
-
-
-### Init Database
+print_deck_data = True
 
 # Import database credentials
 load_dotenv()
@@ -45,6 +35,11 @@ decklists = Table('decklists', meta, autoload_with=engine)
 
 event_data = dict.fromkeys([c.name for c in events.columns])
 deck_data = dict.fromkeys([c.name for c in decks.columns])
+decklist_data = dict.fromkeys([c.name for c in decklists.columns])
+
+main_deck = {}
+sideboard = {}
+
 
 #############################################################
 # Parse HTML bs4 object for decklist, sideboard, metadata
@@ -112,16 +107,6 @@ deck_data['deck_format'] = parsed_html.find('div', class_='meta_arch').get_text(
 deck_data['placement'] = place_title[0]
 deck_data['deck_author'] = place_title_author[1]
 
-# ------- to be deprecated --------- #
-# Insert into metadata dict (to be deprecated)
-
-# deck_metadata['Author'] = place_title_author[1]
-# deck_metadata['Placement'] = place_titlei[0]
-# deck_metadata['Deck Title'] = place_title[1]
-# deck_metadata['Format'] = parsed_html.find('div', class_='meta_arch').get_text()
-# --------------------------------------------
-
-
 # Extract other metadata (Event Date, Event Link)
 date_results = parsed_html.find('div', class_='meta_arch')
 
@@ -156,32 +141,31 @@ if print_event_data == True:
     for key in event_data: print("\t", key, ": ", event_data[key])
 
 # Query database for existing event record
-
 event_query_statement = select(events.c.id).where(events.c.event_name == event_data['event_name'])
-
 with engine.connect() as connection:
         event_query_results = connection.execute(event_query_statement)
         connection.commit() 
 
+# Determine if event already in database
 event_results = event_query_results.all()
 eventExists = len(event_results) != 0
 
 actually_commit = True    
 
+# Submit event data if needed, and get event_id for deck_data
 if not eventExists:
     print("Event not yet recorded")
+    
     event_insert_statement = insert(events).values(event_data)
+    
     with engine.connect() as connection:
         event_insert_results = connection.execute(event_insert_statement)
         if actually_commit == True: connection.commit()
-
     print("Recorded event data")
 
-    # or does it have to go in after we insert event data, we have to get event_id to pass to deckdata
     with engine.connect() as connection:
         event_query_results = connection.execute(event_query_statement)
         connection.commit()
-
 
     # Either way we then have to set event_id:
     event_results = event_query_results.all()
@@ -193,13 +177,9 @@ elif eventExists:
     deck_data['event_id'] = [row[0] for row in event_results][0]
 
 else:
-    print("Found ", len(event_results), " matching events")
+    print("Warning: Found ", len(event_results), " matching events")
 
-print("Retrieved event_id ", deck_data['event_id'])
-
-# elseif eventInDatabase:
-    # deck_data['event_id'] = event_query_results['event_id']
-
+print("Retrieved event_id: ", deck_data['event_id'])
 
 
 # ---- Deck Data ----
@@ -208,10 +188,42 @@ if print_deck_data == True:
     print("Deck Data: ")
     for key in deck_data: print("\t", key, ": ", deck_data[key])
 
-# if deck is not in database:
-deck_statement = insert(decks).values(deck_data)
-# else:
-#   get deck_id
+# Query if Deck exists already
+deck_query_statement = select(decks.c.deck_id).where(decks.c.event_id == deck_data['event_id'] and decks.c.deck_author == deck_data['deck_author'])
+with engine.connect() as connection:
+    deck_query_results = connection.execute(deck_query_statement)
+    connection.commit()
+
+deck_results = deck_query_results.all()
+deckExists = len(deck_results) != 0
+
+# ((ADD logic: IF deck existed already, set deck ID, otherwise insert deck then retrieve deck ID))
+
+if deckExists:
+    decklist_data['deck_id'] = [row[0] for row in deck_results][0]
+    print("Deck already recorded, retrieved deck_id ", decklist_data['deck_id'])
+
+elif not deckExists:
+    deck_insert_statement = insert(decks).values(deck_data)
+
+    # Insert deck data
+    with engine.connect() as connection:
+        deck_insert_results = connection.execute(deck_insert_statement)
+        if actually_commit == True: connection.commit()
+    print("Recorded deck data")
+
+    # Get deck_id for decklist_data
+    with engine.connect() as connection:
+        deck_query_results = connection.execute(deck_query_statement)
+        connection.commit()
+
+    deck_results = deck_query_results.all()
+    decklist_data['deck_id'] = [row[0] for row in deck_results][0]
+
+    print("Loaded deck_data to database\nRetrieved deck_id ", decklist_data['deck_id'])
+
+else:
+    print("Duplicate Deck data found")
 
 
 # ---- Decklist Data ----
