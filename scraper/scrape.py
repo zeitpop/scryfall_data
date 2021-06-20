@@ -10,7 +10,9 @@ print_maindeck = False
 print_sideboard = False
 print_skipped_column_headers = False
 print_event_data = False
-print_deck_data = True
+print_deck_data = False
+print_database = False
+exec_without_commit = False
 
 # Import database credentials
 load_dotenv()
@@ -30,6 +32,7 @@ meta = MetaData()
 events = Table('events', meta, autoload_with=engine)
 decks = Table('decks', meta, autoload_with=engine)
 decklists = Table('decklists', meta, autoload_with=engine)
+cards = Table('cards', meta, autoload_with=engine)
 
 # Instantiate objects to receive processed data
 
@@ -51,7 +54,8 @@ with open ("test_page.html", "r") as raw_file:
 # Parse html into a bs4 object
 parsed_html = bs4.BeautifulSoup(html_file, 'html.parser')
 
-# ----- MAIN DECK -----
+
+# ----- ETRACT MAIN DECK -----
 
 # Find Column Header divs for main deck.
 for category in parsed_html.find_all('div', class_='O14', string=[re.compile('LANDS'), re.compile('CREATURES')]):
@@ -73,8 +77,7 @@ if print_maindeck == True:
     for key in main_deck: print("\t",main_deck[key], " ", key)
 
 
-
-# ---- SIDEBOARD -----
+# ---- EXTRACT SIDEBOARD -----
 
 # Finds Sideboard div
 sideboard_results = parsed_html.find('div', class_='O14', string='SIDEBOARD').find_next_siblings()
@@ -91,7 +94,7 @@ if print_sideboard == True:
     for key in sideboard: print("\t", sideboard[key], " ", key)
 
 
-# ----- METADATA ------
+# ----- EXTRACT METADATA ------
 
 # Create parsed .html object
 metadata_results = parsed_html.find_all('div', class_='event_title')
@@ -124,17 +127,12 @@ event_data['event_date'] = date_text_results[0].split(' - ', 1)[1]
 event_data['event_format'] = parsed_html.find('div', class_='meta_arch').get_text()
 event_data['event_link'] = date_text_results[1]
 
-if print_metadata == True: 
-    print("Metadata:")
-    for key in deck_metadata: 
-        print("\t", key, ": ", deck_metadata[key])
-
 
 ####################################################################
 # Load Extracted Data into Database
 
 
-# ---- Event Data ----
+# ---- Load Event Data ----
 
 if print_event_data == True: 
     print("Event data: ")
@@ -150,39 +148,35 @@ with engine.connect() as connection:
 event_results = event_query_results.all()
 eventExists = len(event_results) != 0
 
-actually_commit = True    
-
 # Submit event data if needed, and get event_id for deck_data
 if not eventExists:
-    print("Event not yet recorded")
+    #print("Event not yet recorded")
     
     event_insert_statement = insert(events).values(event_data)
     
     with engine.connect() as connection:
         event_insert_results = connection.execute(event_insert_statement)
-        if actually_commit == True: connection.commit()
-    print("Recorded event data")
+        if exec_without_commit == False: connection.commit()
+    #print("Recorded event data")
 
     with engine.connect() as connection:
         event_query_results = connection.execute(event_query_statement)
-        connection.commit()
+        if exec_without_commit == False: connection.commit()
 
-    # Either way we then have to set event_id:
     event_results = event_query_results.all()
     deck_data['event_id'] = [row[0] for row in event_results][0]
 
-
 elif eventExists:
-    print("Event already recorded")
+    # print("Event already recorded")
     deck_data['event_id'] = [row[0] for row in event_results][0]
 
 else:
     print("Warning: Found ", len(event_results), " matching events")
 
-print("Retrieved event_id: ", deck_data['event_id'])
+# print("Retrieved event_id: ", deck_data['event_id'])
 
 
-# ---- Deck Data ----
+# ---- Load Deck Data ----
 
 if print_deck_data == True:
     print("Deck Data: ")
@@ -192,50 +186,121 @@ if print_deck_data == True:
 deck_query_statement = select(decks.c.deck_id).where(decks.c.event_id == deck_data['event_id'] and decks.c.deck_author == deck_data['deck_author'])
 with engine.connect() as connection:
     deck_query_results = connection.execute(deck_query_statement)
-    connection.commit()
+    if exec_without_commit == False: connection.commit()
 
 deck_results = deck_query_results.all()
 deckExists = len(deck_results) != 0
 
-# ((ADD logic: IF deck existed already, set deck ID, otherwise insert deck then retrieve deck ID))
-
+# Load deck_data into Database if necessary, then get deck_id
 if deckExists:
     decklist_data['deck_id'] = [row[0] for row in deck_results][0]
-    print("Deck already recorded, retrieved deck_id ", decklist_data['deck_id'])
+    
+    if print_database == True: print("Deck already recorded, retrieved deck_id ", decklist_data['deck_id'])
 
 elif not deckExists:
     deck_insert_statement = insert(decks).values(deck_data)
 
-    # Insert deck data
     with engine.connect() as connection:
         deck_insert_results = connection.execute(deck_insert_statement)
-        if actually_commit == True: connection.commit()
-    print("Recorded deck data")
+        if exec_without_commit == False: connection.commit()
 
-    # Get deck_id for decklist_data
-    with engine.connect() as connection:
-        deck_query_results = connection.execute(deck_query_statement)
-        connection.commit()
+    decklist_data['deck_id'] = deck_insert_results.inserted_primary_key[0]
 
-    deck_results = deck_query_results.all()
-    decklist_data['deck_id'] = [row[0] for row in deck_results][0]
-
-    print("Loaded deck_data to database\nRetrieved deck_id ", decklist_data['deck_id'])
+    if print_database == True: print("Loaded deck_data to database\nRetrieved deck_id ", decklist_data['deck_id'])
 
 else:
-    print("Duplicate Deck data found")
+    if print_database == True: print("Duplicate Deck data found")
 
 
-# ---- Decklist Data ----
+# ---- Load Decklist Data ----
 
-# Load decklist into database
+# For decklist data we have 2 dicts:
+#   dict (main_deck / sideboard:)
+#       <card_name> : count 
+#       ...
+#       ...
 
-    # Can insert multiple rows in a single statement by creating a list of dicts: 
-        #https://docs.sqlalchemy.org/en/14/core/tutorial.html#executing-multiple-statements
-    # Might have to reorganize how we construct card objects
+# We want data in Database Format:
+# -----+---------+---------+-----------+----------------+-----------------+
+# | id | deck_id | card_id | card_name | count_maindeck | count_sideboard |
+# +----+---------+---------+-----------+----------------+-----------------+
+#
+# Which would translate into a dict / row with the column/values as key/values
 
-    # For item in decklist, item =cardname, item(key) = count_maindeck
-    # For item in sideboard, item = cardname, item(key) = count_sideboard
-    # not this --> decklist_statement = insert(deckilsts).values(decklists_data)
 
+# Create the list of dicts for submitting to database
+decklist_data_values = []
+ 
+# construct dicts for each row/card
+for key in main_deck:
+    iter_dict = decklist_data.copy()
+
+    iter_dict['card_name'] = key
+    iter_dict['count_maindeck'] = main_deck[key]
+    iter_dict['count_sideboard'] =  0
+
+    decklist_data_values.append(iter_dict)
+
+# Process sideboard cards 
+for sideboard_card in sideboard:
+   
+    # Check if given sideboard card is also in main_deck
+    if sideboard_card in main_deck:
+        
+        # If it is, iterate through decklist to find existing entry for card and increment its sideboard_count
+        for decklist_item in decklist_data_values: 
+            if sideboard_card == decklist_item['card_name']:
+                decklist_item['sideboard_count'] += sideboard[sideboard_card]
+
+    # Otherwise if card only in sideboard, append to decklist as its own row
+    else: 
+
+
+        iter_dict = decklist_data.copy()
+        iter_dict['card_name'] = sideboard_card
+        iter_dict['count_maindeck'] = 0
+        iter_dict['count_sideboard'] = sideboard[sideboard_card]
+        decklist_data_values.append(iter_dict)
+
+
+############################################################
+#### How to get card id for decklist items to be submitted?
+############################################################
+
+# Card id is the primary key of table cards
+    # Do we need card_id when we have card_name? 
+
+# ! There are multiple card_ids with the same name
+# ! Would have to have logic for which printing, complicating format/legality considerations
+# ! Do we have to drop card_d? What would we lose?
+        # Can still query based on name
+        # Performance of using an int id / index is lost
+        # Anytime a card is recorded in a table with only its id, we have to do joins
+        # do we need a bridge table?
+           # unique card text & its rules
+           # card_name and all matching ids? 
+
+# Also could maybe just forget about cards altogether and leave it to scryfall.......
+
+for card_row in decklist_data_values:
+    print(card_row)
+
+# card_id_query = select(cards.c.internal_card_id, cards.c.name).where(cards.c.name == decklist_data_values(each_dict['card_name'])
+
+# with engine.connect() as connection:
+ #   card_id_query_results = connection.execute(card_id_query)
+ #   if exec_without_commit == False: connection.commit()
+
+#for result in card_id_query_results:
+#    print(result)
+ 
+
+# Submit decklist to database
+decklist_insert_statement = insert(decklists).values(decklist_data_values)
+with engine.connect() as connection:
+    decklist_insert_results = connection.execute(decklist_insert_statement)
+    if exec_without_commit == False: connection.commit()
+
+    # For reference ^ should be able to submit a list of dicts
+   # #https://docs.sqlalchemy.org/en/14/core/tutorial.html#executing-multiple-statements
 
