@@ -11,6 +11,7 @@ print_sideboard = False
 print_skipped_column_headers = False
 print_event_data = False
 print_deck_data = False
+print_decklist_data = False
 print_database = False
 exec_without_commit = False
 
@@ -231,7 +232,7 @@ else:
 # Create the list of dicts for submitting to database
 decklist_data_values = []
  
-# construct dicts for each row/card
+# Process main_deck cards
 for key in main_deck:
     iter_dict = decklist_data.copy()
 
@@ -252,55 +253,21 @@ for sideboard_card in sideboard:
             if sideboard_card == decklist_item['card_name']:
                 decklist_item['sideboard_count'] += sideboard[sideboard_card]
 
-    # Otherwise if card only in sideboard, append to decklist as its own row
+    # Otherwise append to decklist as its own row
     else: 
-
-
         iter_dict = decklist_data.copy()
         iter_dict['card_name'] = sideboard_card
         iter_dict['count_maindeck'] = 0
         iter_dict['count_sideboard'] = sideboard[sideboard_card]
-        decklist_data_values.append(iter_dict)
+        decklist_data_values.append(iter_dict)       
 
-
-############################################################
-#### How to get card id for decklist items to be submitted?
-############################################################
-
-# Card id is the primary key of table cards
-    # Do we need card_id when we have card_name? 
-
-# ! There are multiple card_ids with the same name
-# ! Would have to have logic for which printing, complicating format/legality considerations
-# ! Do we have to drop card_d? What would we lose?
-        # Can still query based on name
-        # Performance of using an int id / index is lost
-        # Anytime a card is recorded in a table with only its id, we have to do joins
-        # do we need a bridge table?
-           # unique card text & its rules
-           # card_name and all matching ids? 
-
-# Also could maybe just forget about cards altogether and leave it to scryfall.......
-
-for card_row in decklist_data_values:
-    print(card_row)
-
-# card_id_query = select(cards.c.internal_card_id, cards.c.name).where(cards.c.name == decklist_data_values(each_dict['card_name'])
-
-# with engine.connect() as connection:
- #   card_id_query_results = connection.execute(card_id_query)
- #   if exec_without_commit == False: connection.commit()
-
-#for result in card_id_query_results:
-#    print(result)
+if print_decklist_data = True: 
+    for card_row in decklist_data_values:
+        print(card_row)
  
-
 # Submit decklist to database
 decklist_insert_statement = insert(decklists).values(decklist_data_values)
 with engine.connect() as connection:
     decklist_insert_results = connection.execute(decklist_insert_statement)
     if exec_without_commit == False: connection.commit()
-
-    # For reference ^ should be able to submit a list of dicts
-   # #https://docs.sqlalchemy.org/en/14/core/tutorial.html#executing-multiple-statements
 

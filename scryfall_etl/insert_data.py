@@ -40,16 +40,12 @@ card_faces = Table('card_faces', meta, autoload_with=engine)
 # Create list of columns    
 columns = [column.name for column in cards.columns]
 
-# Deprecating manual load of column names
-#columns = ["internal_card_id", "scryfall_card_id", "arena_id", "lang", "object", "oracle_id", "scryfall_uri", "uri", "card_face_id", "cmc", "color_identity", "color_indicator", "colors", "layout", "loyalty", "mana_cost", "name", "oracle_text", "power", "produced_mana", "toughness", "type_line", "flavor_text", "rarity", "release_at", "reprint", "set_name", "set_type", "set_code"]
-
-
 # Iterate through cards in raw data, transform into processed dicts for insertion
 for raw_card in data:
     
     processed_card = dict.fromkeys(columns)
     
-    if debug == 1 or 2: print("Processing card: ", raw_card['name'])
+    if debug == 2: print("Processing card: ", raw_card['name'])
 
     for key in processed_card:
     
@@ -70,6 +66,7 @@ for raw_card in data:
 
     statement = insert(cards).values(processed_card)
         
+    # Submit statement to database
     with engine.connect() as connection:
         result = connection.execute(statement)
         if commit == True: connection.commit()
