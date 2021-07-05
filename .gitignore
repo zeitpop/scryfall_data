@@ -3,6 +3,8 @@ scryfall_etl/.env
 scryfall_etl/database_auth.txt
 scryfall_etl/test.py
 scryfall_etl/sql_scripts
+decklist_crawler/decklist_crawler/spiders/.env
+scraper/.env
 scraper/test_page.html
 venv
 data/bulk_data.json
