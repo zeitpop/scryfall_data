@@ -1,0 +1,10 @@
+scryfall_etl/__pycache__
+scryfall_etl/.env
+scryfall_etl/database_auth.txt
+scryfall_etl/test.py
+scryfall_etl/sql_scripts
+scraper/test_page.html
+venv
+data/bulk_data.json
+data/oracle_keys.txt  
+data/test_default.txt
