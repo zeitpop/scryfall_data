@@ -1,6 +1,8 @@
 import scrapy
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
+from dotenv import load_dotenv
+from sqlalchemy import *
 import bs4, re, os, sys, requests
 
 
@@ -29,7 +31,7 @@ class Mtgtop8Spider(CrawlSpider):
         
         # Debugging
         
-        print_maindeck = True
+        print_maindeck = False
         print_sideboard = False
         print_skipped_column_headers = False
         print_event_data = False
@@ -86,6 +88,9 @@ class Mtgtop8Spider(CrawlSpider):
         #parsed_html = bs4.BeautifulSoup(html_file, 'html.parser')
 
         parsed_html = bs4.BeautifulSoup(response.text, 'html.parser')
+        
+        # self.logger.info(type(parsed_html))
+        # self.logger.info(type(response.text))
 
         # ----- ETRACT MAIN DECK -----
 
@@ -134,7 +139,7 @@ class Mtgtop8Spider(CrawlSpider):
         place_title_author = metadata_results[1].get_text().split(' - ', 1)
         place_title = place_title_author[0].split(" ", 1)
         
-         # deck_data['event_id'] = how to get event_id after data gets submitted?
+        # deck_data['event_id'] = how to get event_id after data gets submitted?
         deck_data['deck_title'] = place_title[1]
         deck_data['deck_format'] = parsed_html.find('div', class_='meta_arch').get_text()
         deck_data['placement'] = place_title[0]
