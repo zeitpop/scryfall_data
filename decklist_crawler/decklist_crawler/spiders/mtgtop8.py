@@ -35,21 +35,22 @@ class Mtgtop8Spider(CrawlSpider):
         
         # Debugging
         
+        # Enable Debug statements for code parsing html for data
         debug_parse_decklist = False
-        debug_parse_metadata = True
-        print_parsed_decklist = True
+        debug_parse_metadata = False
 
+        # Enable debug statements printing data extracted from parsed html
+        print_parsed_decklist = True
         print_event_data = True
         print_deck_data = True
 
-        extract_metadata = False
-
+        #
         print_decklist_data = False
         print_database = False
         
         exec_without_commit = False
 
-        load_database = False
+        load_database = True
 
         # Instantiate
         main_deck = {}
@@ -116,17 +117,15 @@ class Mtgtop8Spider(CrawlSpider):
                 # Split out first word (seperates cards/column names from counts)
                 text = descendant.get_text().split(" ", 1)
 
+                # Logic for checking if iteration is a column header or a card, and if card goes in sideboard
                 if any(item in maindeck_column_names for item in text):
-                    
                     if debug_parse_decklist == True: self.logger.info(f'COLUMN NAME: {text}')
-                
                 elif any(item in ['SIDEBOARD'] for item in text):
-                    
                     if debug_parse_decklist == True: self.logger.info(f'SIDEBOARD: {text}')
+                    
+                    # If iteration is sideboard column header, future cards will be stored in sideboard dict
                     target_sideboard = True
-
                 else:
-
                     # Get cardname and count from extracted text, for clarity's sake
                     cardname = text[1]
                     count = text[0]
@@ -136,63 +135,85 @@ class Mtgtop8Spider(CrawlSpider):
                         sideboard[cardname] = count
                     else:
                         main_deck[cardname] = count
-
                     if debug_parse_decklist == True: self.logger.info(f'Count: {count}, Cardname: {cardname}')
 
-           
+           # Debug for results of decklist / extraction
             if print_parsed_decklist == True:
-                self.logger.info("Main Deck: ")
-                for key in main_deck: self.logger.info(f'\t {main_deck[key]} {key}')
-                self.logger.info("Sideboard: ")
-                for key in sideboard: self.logger.info(f'\t {sideboard[key]} {key}')
+                self.logger.info('Decklist: ')
+                self.logger.info('\tMain Deck: ')
+                for key in main_deck: self.logger.info(f'\t\t {main_deck[key]} {key}')
+                self.logger.info('\tSideboard: ')
+                for key in sideboard: self.logger.info(f'\t\t {sideboard[key]} {key}')
 
 
         # ----- EXTRACT METADATA ------
 
-        if extract_metadata == True:
+        # Create parsed .html object
+        metadata_results = parsed_html.find_all('div', class_='event_title')
+      
+        metadata_results_text = []
 
-            # Create parsed .html object
-            metadata_results = parsed_html.find_all('div', class_='event_title')
-            if debug_parse_metadata == True: self.logger.info(f'\nmetadata_results:\n{metadata_results}')
-            
-            # Extract Deck Author, Title, and Placement in Event
-            place_title_author = metadata_results[1].get_text().split(' - ', 1)
-            if debug_parse_metadata == True: self.logger.info(f'\nplace_title_author:\n{place_title_author}')
+        # decks are organized within events, so may have divs with arrows for navigating between decks in event
+        for item in metadata_results:
+            if str(item.get_text()) == '→' or str(item.get_text()) == '←':
+                continue
+            else:
+                metadata_results_text.append(item.get_text())
+        
+        # Extract Deck Author, Title, and Placement in Event
+        place_title_author = metadata_results_text[1].split(' - ', 1)
+        if debug_parse_metadata == True: self.logger.info(f'\nplace_title_author:\n{place_title_author}')
 
-            place_title = place_title_author[0].split(" ", 1)
-            if debug_parse_metadata == True: self.logger.info(f'\nplace_title:\n{place_title}')
-            
-            # deck_data['event_id'] = how to get event_id after data gets submitted?
-            deck_data['deck_title'] = place_title[1]
-            deck_data['deck_format'] = parsed_html.find('div', class_='meta_arch').get_text()
-            deck_data['placement'] = place_title[0]
-            deck_data['deck_author'] = place_title_author[1]
-            
-            if print_deck_data == True:
-                for key in deck_data:
-                    self.logger.info(f'{key} {deck_data[key]}')
+        place_title = place_title_author[0].split(" ", 1)
+        if debug_parse_metadata == True: self.logger.info(f'\nplace_title:\n{place_title}')
+        
+        # Store deck data in dict
+        deck_data['deck_title'] = place_title[1]
+        deck_data['deck_format'] = parsed_html.find('div', class_='meta_arch').get_text()
+        deck_data['placement'] = place_title[0]
+        deck_data['deck_author'] = place_title_author[1]
+    
+        if print_deck_data == True:
+            self.logger.info('Deck Data: ')
+            for key in deck_data:
+                self.logger.info(f'\t{key} {deck_data[key]}')
 
-            # Extract other metadata (Event Date, Event Link)
-            date_results = parsed_html.find('div', class_='meta_arch')
-            
-            date_text_results=[]
-            
-            for i in date_results.next_siblings:
-                if isinstance(i, bs4.element.NavigableString):
-                    continue
-                if isinstance(i, bs4.element.Tag):
-                    date_text_results.append(i.get_text())
-            
-            # Set event data
-            event_data['event_name'] = metadata_results[0].get_text()
+        
+
+        # Extract other metadata (Event Date, Event Link)
+        date_results = parsed_html.find('div', class_='meta_arch')
+        
+        date_text_results=[]
+        
+        for i in date_results.next_siblings:
+            if isinstance(i, bs4.element.NavigableString):
+                continue
+            if isinstance(i, bs4.element.Tag):
+                date_text_results.append(i.get_text())
+    
+        if debug_parse_metadata == True: 
+            self.logger.info('date_text_results:') 
+            for item in date_text_results:
+                self.logger.info(f'\t{item}')
+
+
+        # Set Event Data
+        event_data['event_name'] = metadata_results_text[0]
+
+        # Sometimes the div containing event date also has players in event '234 players - 1/2/21'
+        if '-' in date_text_results[0]:
             event_data['event_date'] = date_text_results[0].split(' - ', 1)[1]
-            event_data['event_format'] = parsed_html.find('div', class_='meta_arch').get_text()
-            event_data['event_link'] = date_text_results[1]
-            
+        else:
+            event_data['event_date'] = date_text_results[0]
 
-            if print_event_data == True:
-                for key in event_data:
-                    self.logger.info(f'{key} {event_data[key]}')            
+        event_data['event_format'] = parsed_html.find('div', class_='meta_arch').get_text()
+        event_data['event_link'] = date_text_results[1]
+        
+
+        if print_event_data == True:
+            self.logger.info(f'Event Data:')
+            for key in event_data:
+                self.logger.info(f'\t{key} {event_data[key]}')            
 
         # item = [main_deck, sideboard, deck_data, event_data]
 
@@ -205,6 +226,6 @@ class Mtgtop8Spider(CrawlSpider):
     # Callback Function for pages without decklist
     def parse(self, response):
 
-        # Find links and yiel request objects to engine
+        # Find links and yield request objects to engine
         for href in response.xpath('//a/@href').getall():
             yield scrapy.Request(response.urljoin(href))
