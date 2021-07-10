@@ -215,9 +215,17 @@ class Mtgtop8Spider(CrawlSpider):
             for key in event_data:
                 self.logger.info(f'\t{key} {event_data[key]}')            
 
-        # item = [main_deck, sideboard, deck_data, event_data]
 
-        # yield item
+        # Instantiate item for export
+        item = DecklistCrawlerItem()
+
+        # transfer scraped data to item
+        item[main_deck] = main_deck
+        item[sideboard] = sideboard
+        item[deck_data] = deck_data
+        item[event_data] = event_data 
+
+        yield item
 
         # Find links and yield request objects to engine
         for href in response.xpath('//a/@href').getall():
