@@ -4,7 +4,7 @@ from scrapy.linkextractors import LinkExtractor
 from dotenv import load_dotenv
 from sqlalchemy import *
 import bs4, re, os, sys, requests
-
+from decklist_crawler.items import pageItem
 
 class Mtgtop8Spider(CrawlSpider):
     name = 'mtgtop8'
@@ -217,13 +217,14 @@ class Mtgtop8Spider(CrawlSpider):
 
 
         # Instantiate item for export
-        item = DecklistCrawlerItem()
+        item = pageItem()
+        
 
-        # transfer scraped data to item
-        item[main_deck] = main_deck
-        item[sideboard] = sideboard
-        item[deck_data] = deck_data
-        item[event_data] = event_data 
+        # transfer scraped data to item for export
+        item['decklist'] = main_deck
+        item['sideboard'] = sideboard
+        item['deck_data'] = deck_data
+        item['event_data'] = event_data
 
         yield item
 

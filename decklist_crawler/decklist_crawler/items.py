@@ -7,17 +7,18 @@ import scrapy
 from sqlalchemy import *
 
 
+class pageItem(scrapy.Item):
+	event_data = scrapy.Field()
+	deck_data = scrapy.Field()
+	decklist = scrapy.Field()
+	sideboard = scrapy.Field()
 
-
-class DecklistCrawlerItem(scrapy.Item):
+#class sideboardItem(dict):
     # define the fields for your item here like:
     # name = scrapy.Field()
 
-    sideboard = scrapy.Field()
-    main_deck = scrapy.Field()
-    event_data = scrapy.Field()
-    deck_data = scrapy.Field()
-
+#class decklistItem(dict)
+	
 # class Product(scrapy.Item):
 #     name = scrapy.Field()
 #     price = scrapy.Field()
