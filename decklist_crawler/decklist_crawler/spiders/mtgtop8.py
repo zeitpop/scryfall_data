@@ -23,7 +23,7 @@ class Mtgtop8Spider(CrawlSpider):
         Rule(LinkExtractor(allow=('mtgtop8.com/event?', ), deny=('&switch=visual')), callback='parse_decklist'),
 
         # Deny a few link categories that get appear early in pages but don't yield many pages with decks
-        Rule(LinkExtractor(deny=('/topcards?', '/archetype?' ))),  
+        Rule(LinkExtractor(deny=('/topcards?', '/archetype?', '/dec?', '/mtgo?' '/search?' ))),  
 
         # Set callback function for all other (non-deck) pages
         Rule(LinkExtractor(), callback = 'parse'),
