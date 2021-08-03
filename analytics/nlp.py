@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os, gensim, numpy, sys
 from gensim import corpora
 from six import iteritems
+
 # Import database credentials
 load_dotenv()
 database_url = os.environ.get('DATABASE_URL')
